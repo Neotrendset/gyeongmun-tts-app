@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="color-scheme" content="light dark">
+  <script>
+    try {
+      const saved = localStorage.getItem("color-scheme");
+      if (saved === "light" || saved === "dark") {
+        document.querySelector('meta[name="color-scheme"]').content = saved;
+      }
+    } catch (_) {}
+  </script>
+  <title>한국경문총전집 | 상황별 경문 추천 및 TTS 암송</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <a href="#main-content" class="skip-link visually-hidden">본문으로 건너뛰기</a>
+
+  <header class="app-header">
+    <div class="header-inner">
+      <div class="brand">
+        <span class="brand-mark" aria-hidden="true">經</span>
+        <div>
+          <h1 id="main-content" tabindex="-1">한국경문총전집 암송기</h1>
+          <p class="subtitle">상황·목적에 맞는 경문을 찾고 음성으로 함께 독송합니다</p>
+        </div>
+      </div>
+      <div class="header-actions">
+        <button type="button" id="open-settings-btn" class="btn btn-secondary">
+          <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="3"></circle>
+            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9c.26.6.85 1 1.51 1H21a2 2 0 1 1 0 4h-.09c-.66 0-1.25.4-1.51 1z"></path>
+          </svg>
+          화면·음성 설정
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <nav class="mobile-view-tabs" aria-label="화면 전환">
+    <button type="button" id="tab-finder-btn" class="mobile-tab-btn" aria-pressed="true">
+      경문 찾기
+    </button>
+    <button type="button" id="tab-reader-btn" class="mobile-tab-btn" aria-pressed="false">
+      암송하기
+    </button>
+  </nav>
+
+  <main class="workspace" data-mobile-view="finder">
+    <aside class="finder-panel" aria-label="경문 검색 및 상황 선택">
+      <section class="search-box">
+        <div class="field">
+          <label for="search-input" class="field-label">상황·키워드 검색</label>
+          <div class="search-input-wrap">
+            <input
+              id="search-input"
+              type="search"
+              placeholder="예: 개업, 안택, 부정, 병환, 조상, 천수경..."
+              autocomplete="off"
+            >
+          </div>
+        </div>
+
+        <div class="quick-keywords" aria-label="자주 찾는 상황 키워드">
+          <span class="quick-label">빠른 키워드:</span>
+          <button type="button" class="chip-sm" data-keyword="개업">개업·사업</button>
+          <button type="button" class="chip-sm" data-keyword="안택">이사·안택</button>
+          <button type="button" class="chip-sm" data-keyword="병">병환·쾌차</button>
+          <button type="button" class="chip-sm" data-keyword="귀신">축귀·액막이</button>
+          <button type="button" class="chip-sm" data-keyword="조상">조상·해원</button>
+          <button type="button" class="chip-sm" data-keyword="부정">부정풀기</button>
+        </div>
+
+        <div class="field">
+          <label for="category-select" class="field-label">편·제문 분류</label>
+          <select id="category-select">
+            <option value="all">전체 분류</option>
+          </select>
+        </div>
+
+        <nav aria-label="상황 태그 필터">
+          <p class="field-label" id="tag-filter-label">상황별 태그</p>
+          <div id="tag-list" class="tag-grid" role="group" aria-labelledby="tag-filter-label"></div>
+        </nav>
+      </section>
+
+      <section class="results-section" aria-label="검색된 경문 목록">
+        <div class="results-header">
+          <h2 class="section-heading">추천 경문</h2>
+          <span id="results-count" class="count-badge">0편</span>
+        </div>
+        <ul id="scripture-list" class="scripture-list"></ul>
+      </section>
+    </aside>
+
+    <section class="reader-panel" aria-label="경문 본문 및 TTS 암송 플레이어">
+      <div class="player-bar">
+        <div class="player-meta">
+          <div class="meta-top-row">
+            <div class="meta-badges">
+              <span id="active-part" class="badge badge-subtle">편제</span>
+              <span id="active-category" class="badge badge-accent">분류</span>
+            </div>
+            <button type="button" id="mobile-back-btn" class="btn btn-secondary btn-sm mobile-only">
+              ← 목록
+            </button>
+          </div>
+          <h2 id="active-title" class="active-title">경문을 선택해 주세요</h2>
+          <p id="active-desc" class="active-desc"></p>
+        </div>
+
+        <div class="player-controls" role="group" aria-label="암송 재생 제어">
+          <button type="button" id="prev-chunk-btn" class="btn btn-icon" aria-label="이전 구절" disabled>
+            <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <polygon points="19 20 9 12 19 4 19 20"></polygon>
+              <line x1="5" y1="19" x2="5" y2="5"></line>
+            </svg>
+          </button>
+
+          <button type="button" id="play-pause-btn" class="btn btn-primary btn-play" disabled>
+            <svg id="icon-play" aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+              <polygon points="6 3 20 12 6 21 6 3"></polygon>
+            </svg>
+            <svg id="icon-pause" aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="currentColor" hidden>
+              <rect x="6" y="4" width="4" height="16"></rect>
+              <rect x="14" y="4" width="4" height="16"></rect>
+            </svg>
+            <span id="play-btn-label">암송 시작</span>
+          </button>
+
+          <button type="button" id="stop-btn" class="btn btn-secondary" disabled>정지</button>
+
+          <button type="button" id="next-chunk-btn" class="btn btn-icon" aria-label="다음 구절" disabled>
+            <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <polygon points="5 4 15 12 5 20 5 4"></polygon>
+              <line x1="19" y1="5" x2="19" y2="19"></line>
+            </svg>
+          </button>
+        </div>
+
+        <div class="player-sliders">
+          <div class="slider-item">
+            <label for="rate-slider">속도 <strong id="rate-value">0.9x</strong></label>
+            <input id="rate-slider" type="range" min="0.5" max="1.6" step="0.05" value="0.9">
+          </div>
+
+          <div class="slider-item">
+            <label for="repeat-select">반복</label>
+            <select id="repeat-select">
+              <option value="1">1회 독송</option>
+              <option value="3">3회 독송</option>
+              <option value="7">7회 독송</option>
+              <option value="0">무한 반복</option>
+            </select>
+          </div>
+
+          <div class="slider-item">
+            <label for="font-size-select">글자</label>
+            <select id="font-size-select">
+              <option value="md">보통</option>
+              <option value="lg" selected>크게</option>
+              <option value="xl">아주 크게</option>
+            </select>
+          </div>
+
+          <div class="slider-item progress-item">
+            <span id="progress-text" class="progress-text">대기 중</span>
+            <progress id="recite-progress" max="100" value="0">0%</progress>
+          </div>
+        </div>
+
+        <div id="tts-warning" class="tts-warning" hidden></div>
+      </div>
+
+      <article id="scripture-body" class="scripture-body size-lg" aria-label="경문 본문">
+        <p class="empty-state">왼쪽 목록에서 경문을 선택하면 구절별로 암송할 수 있습니다.</p>
+      </article>
+    </section>
+  </main>
+
+  <div id="live-status" class="visually-hidden" aria-live="polite" aria-atomic="true"></div>
+
+  <dialog id="settings-dialog" class="settings-dialog" aria-labelledby="settings-title">
+    <div class="dialog-header">
+      <h2 id="settings-title">화면 및 음성 설정</h2>
+      <button type="button" id="close-settings-btn" class="btn btn-secondary">닫기</button>
+    </div>
+
+    <div class="dialog-body">
+      <fieldset class="setting-group">
+        <legend>화면 테마</legend>
+        <div class="radio-row">
+          <label for="theme-system">
+            <input type="radio" id="theme-system" name="theme" value="light dark" checked>
+            <span>시스템 설정 따름</span>
+          </label>
+          <label for="theme-light">
+            <input type="radio" id="theme-light" name="theme" value="light">
+            <span>라이트 모드</span>
+          </label>
+          <label for="theme-dark">
+            <input type="radio" id="theme-dark" name="theme" value="dark">
+            <span>다크 모드</span>
+          </label>
+        </div>
+      </fieldset>
+
+      <div class="setting-group">
+        <label for="voice-select" class="field-label">한국어 TTS 목소리</label>
+        <select id="voice-select"></select>
+        <p class="hint">브라우저 및 운영체제에 설치된 음성이 표시됩니다.</p>
+      </div>
+
+      <div class="setting-group">
+        <label for="pitch-slider" class="field-label">음높이 (피치): <strong id="pitch-value">0.95</strong></label>
+        <input id="pitch-slider" type="range" min="0.7" max="1.3" step="0.05" value="0.95">
+      </div>
+
+      <div class="setting-group">
+        <label for="pause-slider" class="field-label">구절 간 쉬는 시간: <strong id="pause-value">350ms</strong></label>
+        <input id="pause-slider" type="range" min="0" max="1500" step="50" value="350">
+      </div>
+
+      <div class="setting-group">
+        <label for="autoscroll-check" class="checkbox-label">
+          <input type="checkbox" id="autoscroll-check" checked>
+          <span>읽고 있는 구절로 자동 스크롤</span>
+        </label>
+      </div>
+
+      <div class="setting-group shortcuts-info">
+        <h3>키보드 단축키</h3>
+        <ul>
+          <li><kbd>Space</kbd> : 암송 재생 / 일시정지</li>
+          <li><kbd>←</kbd> / <kbd>→</kbd> : 이전 구절 / 다음 구절</li>
+        </ul>
+      </div>
+    </div>
+  </dialog>
+
+  <script src="app.js" type="module"></script>
+</body>
+</html>
